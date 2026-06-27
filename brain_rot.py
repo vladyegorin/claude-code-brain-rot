@@ -163,6 +163,13 @@ def spawn_mpv(mpv_bin, video_path, geometry):
         kwargs["creationflags"] = DETACHED
     else:
         kwargs["start_new_session"] = True
+        # Wayland doesn't allow apps to set window positions, so geometry
+        # placement is ignored and windows appear centered. Unsetting
+        # WAYLAND_DISPLAY forces mpv to use X11/XWayland, which respects it.
+        if os.environ.get("WAYLAND_DISPLAY"):
+            env = os.environ.copy()
+            env.pop("WAYLAND_DISPLAY", None)
+            kwargs["env"] = env
     try:
         return subprocess.Popen(cmd, **kwargs)
     except Exception:
