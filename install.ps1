@@ -3,8 +3,6 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $repoRoot = $PSScriptRoot
-$settingsDir = Join-Path $repoRoot ".claude"
-$settingsFile = Join-Path $settingsDir "settings.json"
 
 Write-Host ""
 Write-Host "Claude Code Brain Rot - Windows Installer" -ForegroundColor Cyan
@@ -54,52 +52,21 @@ if ($mpvFound) {
     Write-Host "  Then re-run this installer (or just start using Claude Code - it will warn)."
 }
 
-# ── Write settings.json ───────────────────────────────────────────────────────
-Write-Host "Writing .claude/settings.json..." -NoNewline
+# ── Merge settings into ~/.claude/settings.json ───────────────────────────────
+Write-Host "Merging hooks and permissions into ~/.claude/settings.json..." -NoNewline
+& python (Join-Path $repoRoot "scripts/merge_settings.py") add --repo-root $repoRoot --py-cmd "python" | Out-Null
+Write-Host " OK" -ForegroundColor Green
 
-$settingsJson = @'
-{
-  "permissions": {
-    "allow": [
-      "Bash(python brain_rot.py *)",
-      "Bash(python3 brain_rot.py *)"
-    ]
-  },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          { "type": "command", "command": "python brain_rot.py start" }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          { "type": "command", "command": "python scripts/think.py" }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          { "type": "command", "command": "python brain_rot.py notify" }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          { "type": "command", "command": "python scripts/notify.py" }
-        ]
-      }
-    ]
-  }
+# ── Copy slash commands to ~/.claude/commands/ (with absolute path substitution) ─
+Write-Host "Installing slash commands to ~/.claude/commands/..." -NoNewline
+$claudeCommandsDir = Join-Path $env:USERPROFILE ".claude\commands"
+New-Item -ItemType Directory -Force $claudeCommandsDir | Out-Null
+$brainRotAbs = (Join-Path $repoRoot "brain_rot.py") -replace "\\", "/"
+foreach ($file in (Get-ChildItem -Path (Join-Path $repoRoot "commands") -Filter "*.md")) {
+    $content = Get-Content $file.FullName -Raw
+    $content = $content -replace "brain_rot\.py", $brainRotAbs
+    Set-Content -Path (Join-Path $claudeCommandsDir $file.Name) -Value $content -NoNewline
 }
-'@
-
-New-Item -ItemType Directory -Force $settingsDir | Out-Null
-Set-Content -Path $settingsFile -Value $settingsJson -Encoding UTF8
 Write-Host " OK" -ForegroundColor Green
 
 # ── Create state directory ────────────────────────────────────────────────────
@@ -110,6 +77,6 @@ Write-Host " OK" -ForegroundColor Green
 # ── Done ──────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "Done!" -ForegroundColor Green
-Write-Host "Open Claude Code in this folder and start a conversation."
+Write-Host "Brain rot is now active in every Claude Code project."
 Write-Host "Try /brainrot-severity max for the full experience."
 Write-Host ""

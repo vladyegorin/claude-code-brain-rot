@@ -2,8 +2,6 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-SETTINGS_DIR="$REPO_ROOT/.claude"
-SETTINGS_FILE="$SETTINGS_DIR/settings.json"
 
 echo ""
 echo "Claude Code Brain Rot — Installer"
@@ -48,50 +46,17 @@ else
     echo "  Then re-run this installer (or just start using Claude Code — it will warn)."
 fi
 
-# ── Write settings.json ───────────────────────────────────────────────────────
-printf "Writing .claude/settings.json... "
-mkdir -p "$SETTINGS_DIR"
+# ── Merge settings into ~/.claude/settings.json ───────────────────────────────
+printf "Merging hooks and permissions into ~/.claude/settings.json... "
+"$PY_CMD" "$REPO_ROOT/scripts/merge_settings.py" add --repo-root "$REPO_ROOT" --py-cmd "$PY_CMD" >/dev/null
+echo "OK"
 
-cat > "$SETTINGS_FILE" <<EOF
-{
-  "permissions": {
-    "allow": [
-      "Bash(python brain_rot.py *)",
-      "Bash(python3 brain_rot.py *)"
-    ]
-  },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          { "type": "command", "command": "$PY_CMD brain_rot.py start" }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          { "type": "command", "command": "$PY_CMD scripts/think.py" }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          { "type": "command", "command": "$PY_CMD brain_rot.py notify" }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          { "type": "command", "command": "$PY_CMD scripts/notify.py" }
-        ]
-      }
-    ]
-  }
-}
-EOF
+# ── Copy slash commands to ~/.claude/commands/ (with absolute path substitution) ─
+printf "Installing slash commands to ~/.claude/commands/... "
+mkdir -p "$HOME/.claude/commands"
+for FILE in "$REPO_ROOT/commands/"*.md; do
+    sed "s|brain_rot.py|$REPO_ROOT/brain_rot.py|g" "$FILE" > "$HOME/.claude/commands/$(basename "$FILE")"
+done
 echo "OK"
 
 # ── Create state directory ────────────────────────────────────────────────────
@@ -102,6 +67,6 @@ echo "OK"
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
 echo "Done!"
-echo "Open Claude Code in this folder and start a conversation."
+echo "Brain rot is now active in every Claude Code project."
 echo "Try /brainrot-severity max for the full experience."
 echo ""
