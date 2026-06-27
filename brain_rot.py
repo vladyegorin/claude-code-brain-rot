@@ -456,7 +456,9 @@ def cmd_enable():
         return
     _kill_daemon_and_videos()
     remove(ALIVE_FILE)
-    print("Brain rot enabled (severity=max) — will start on your next message.")
+    ensure_daemon()
+    touch(THINK_FLAG)
+    print("Brain rot enabled (severity=max).")
 
 def cmd_disable():
     cfg = read_config()

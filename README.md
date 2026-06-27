@@ -2,7 +2,7 @@
 
 Plays brainrot videos in the corners of your screen while Claude is working. Kills them and beeps when Claude finishes or needs your attention.
 
-> **Note:** This currently only works when Claude Code is opened inside the directory where this repo is cloned. A global install (works in any project) is in progress.
+> **Note:** The install is global — once installed, brain rot is active in every Claude Code project on your machine.
 
 ---
 
@@ -64,7 +64,25 @@ If you don't have mpv:
 sudo apt install mpv
 ```
 
-The installer checks your Python version, writes `.claude/settings.json`, and creates the `~/.brainrot/` state directory.
+The installer checks your Python version, deep-merges brain rot's hooks and permissions into `~/.claude/settings.json` (without clobbering your existing settings), copies the slash commands to `~/.claude/commands/`, and creates the `~/.brainrot/` state directory.
+
+---
+
+## Uninstall
+
+### Windows
+
+```powershell
+.\uninstall.ps1
+```
+
+### macOS / Linux
+
+```bash
+bash uninstall.sh
+```
+
+The uninstaller removes brain rot's hooks and permissions from `~/.claude/settings.json` (leaving your other settings intact) and deletes the brain rot slash commands from `~/.claude/commands/`.
 
 ---
 
@@ -145,7 +163,7 @@ Kills the daemon and any playing videos. Useful after editing `brain_rot.py` —
 
 ## Notes
 
-- Hooks only fire when Claude Code is opened inside the cloned repo folder. Your other projects are unaffected.
+- Hooks fire in every Claude Code project — the install is global. To disable brain rot temporarily, use `/brainrot-disable`; to remove it entirely, run the uninstaller.
 - The daemon runs as a normal user process — no admin rights, no services, nothing persistent across reboots.
 - If mpv is not found, the plugin logs a message to `~/.brainrot/mpv_missing.txt` and does nothing. No crash, no noise.
 - After editing `brain_rot.py`, run `/brainrot-restart` to reload the daemon.
